@@ -9,6 +9,13 @@ import { renderPlanEmail, sendPlanEmail } from "./plan-email";
 import { draftPlan, type PlanContext, type PlanThread } from "./planner";
 import { triagePending } from "./triage";
 
+/** Where links in the morning email point: an explicit APP_URL, else the Vercel production domain. */
+function appUrl(): string {
+  if (process.env.APP_URL) return process.env.APP_URL;
+  const host = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  return host ? `https://${host}` : "http://localhost:3000";
+}
+
 export type RunResult = {
   day: string;
   synced: number;
@@ -161,7 +168,7 @@ export async function runDaily(userId: string, opts: { email?: boolean } = {}): 
           summary: plan.summary,
           items: plan.items,
           metrics: ctx.metrics,
-          appUrl: process.env.APP_URL ?? "http://localhost:3000",
+          appUrl: appUrl(),
         }),
       );
       if (emailed) await db.update(p).set({ emailedAt: new Date() }).where(eq(p.id, planId));
