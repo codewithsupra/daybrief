@@ -1,58 +1,39 @@
 @import "tailwindcss";
 
+/* Dark only: black canvas, one neon green accent, vivid data colours. */
 :root {
-  --bg: #f5f6f8;
-  --surface: #ffffff;
-  --sunk: #eceef2;
-  --ink: #15181d;
-  --muted: #5f6875;
-  --faint: #8d95a1;
-  --line: #e0e4ea;
-  --accent: #2c50d6;
-  --good: #14794f;
-  --warn: #a8590b;
-  --c-work_learning: #1f8a5b;
-  --c-creator: #2c50d6;
-  --c-entertainment: #d9912b;
-  --c-social: #8a4fd0;
-  --c-news: #1c93b0;
-  --c-shopping: #cc4f86;
-  --c-other: #98a0ab;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14161a;
-    --surface: #1c1f25;
-    --sunk: #252930;
-    --ink: #e8eaee;
-    --muted: #a0a7b2;
-    --faint: #737b87;
-    --line: #2e333b;
-    --accent: #8ea6ff;
-    --good: #57c596;
-    --warn: #e6a35a;
-    --c-work_learning: #4fbf8b;
-    --c-creator: #7f9bff;
-    --c-entertainment: #e6aa52;
-    --c-social: #b48af0;
-    --c-news: #55bdd6;
-    --c-shopping: #e684b0;
-    --c-other: #6f7783;
-  }
+  color-scheme: dark;
+  --bg: #000000;
+  --surface: #0b0c0e;
+  --raised: #131519;
+  --line: #1e2227;
+  --ink: #ffffff;
+  --muted: #a1a7b0;
+  --faint: #656b74;
+  --accent: #00e599;
+  --accent-ink: #00140d;
+  --warn: #ffb224;
+  --danger: #ff6369;
+  --c-work_learning: #00e599;
+  --c-creator: #4d9dff;
+  --c-entertainment: #ffb224;
+  --c-social: #b678ff;
+  --c-news: #2de0e6;
+  --c-shopping: #ff5fa2;
+  --c-other: #4b515a;
 }
 
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
-  --color-sunk: var(--sunk);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
   --color-faint: var(--faint);
-  --color-line: var(--line);
   --color-accent: var(--accent);
-  --color-good: var(--good);
   --color-warn: var(--warn);
+  --color-danger: var(--danger);
   --font-sans: var(--font-app);
 }
 
@@ -66,7 +47,6 @@ body {
   line-height: 1.45;
 }
 
-/* Type scale: 12 / 13 / 14 (base) / 16 / 18. Nothing larger anywhere. */
 .t-page {
   font-size: 18px;
   font-weight: 600;
@@ -84,67 +64,123 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 28px;
-  border-radius: 6px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  padding: 0 10px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid #343941;
+  background: transparent;
+  padding: 0 14px;
   font-size: 13px;
   font-weight: 500;
   color: var(--ink);
   white-space: nowrap;
   cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
 }
 .btn:hover {
-  border-color: var(--faint);
+  border-color: var(--muted);
 }
 .btn:disabled {
   opacity: 0.55;
   cursor: progress;
 }
 .btn-primary {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--bg);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.btn-primary:hover {
+  border-color: var(--accent);
+  background: #33f0b0;
 }
 .btn-sm {
   height: 24px;
-  padding: 0 8px;
+  padding: 0 10px;
   font-size: 12px;
 }
 .btn-ghost {
   border-color: transparent;
-  background: transparent;
   color: var(--muted);
 }
 .btn-ghost:hover {
   border-color: transparent;
-  background: var(--sunk);
+  background: var(--raised);
   color: var(--ink);
+}
+.btn-danger {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  color: var(--danger);
+}
+.btn-danger:hover {
+  border-color: var(--danger);
 }
 
 .field {
   width: 100%;
-  height: 30px;
-  border-radius: 6px;
+  height: 32px;
+  border-radius: 8px;
   border: 1px solid var(--line);
-  background: var(--surface);
-  padding: 0 8px;
+  background: var(--raised);
+  padding: 0 10px;
   font-size: 13px;
   color: var(--ink);
 }
+.field::placeholder {
+  color: var(--faint);
+}
+.field:focus {
+  outline: none;
+  border-color: var(--accent);
+}
 textarea.field {
   height: auto;
-  padding: 6px 8px;
+  padding: 8px 10px;
 }
 
 .panel {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--surface);
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
 }
 .row + .row {
   border-top: 1px solid var(--line);
+}
+
+/* Metric tile: a soft glow of its own colour in the corner. */
+.tile {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 12px 14px;
+}
+.tile::before {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 130px;
+  height: 130px;
+  border-radius: 999px;
+  background: var(--glow, var(--accent));
+  opacity: 0.2;
+  filter: blur(34px);
+  pointer-events: none;
+}
+.tile-value {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
 }
 
 .check {
@@ -158,11 +194,63 @@ textarea.field {
   cursor: pointer;
 }
 .check:hover {
-  border-color: var(--good);
-  background: color-mix(in srgb, var(--good) 18%, transparent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.pill {
+  display: inline-block;
+  max-width: 100%;
+  height: 20px;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--pill, var(--accent));
+  background: color-mix(in srgb, var(--pill, var(--accent)) 14%, transparent);
+}
+
+/* Toggle switch built on a checkbox. */
+.switch {
+  appearance: none;
+  position: relative;
+  width: 34px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #2a2f36;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #fff;
+  transition: transform 0.15s;
+}
+.switch:checked {
+  background: var(--accent);
+}
+.switch:checked::after {
+  transform: translateX(14px);
 }
 
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }

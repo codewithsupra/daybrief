@@ -152,7 +152,7 @@ export async function runDaily(userId: string, opts: { email?: boolean } = {}): 
   }
 
   let emailed = false;
-  if (opts.email && !existing?.emailedAt) {
+  if (opts.email && user.morningEmail && !existing?.emailedAt) {
     try {
       emailed = await sendPlanEmail(
         user.email,

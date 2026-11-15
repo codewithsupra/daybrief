@@ -8,6 +8,13 @@
       "when": 1794746621302,
       "tag": "0000_spicy_sunfire",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794762465642,
+      "tag": "0001_equal_gabe_jones",
+      "breakpoints": true
     }
   ]
 }

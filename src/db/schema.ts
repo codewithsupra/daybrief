@@ -22,6 +22,7 @@ export const users = pgTable("users", {
   name: text("name"),
   timezone: text("timezone").notNull().default("UTC"),
   blocklist: jsonb("blocklist").$type<string[]>().notNull().default([]),
+  morningEmail: boolean("morning_email").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

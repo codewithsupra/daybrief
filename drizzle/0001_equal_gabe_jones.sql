@@ -1,0 +1,1 @@
+ALTER TABLE "users" ADD COLUMN "morning_email" boolean DEFAULT true NOT NULL;

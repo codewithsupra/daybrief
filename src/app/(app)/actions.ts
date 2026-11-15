@@ -3,7 +3,7 @@
 import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { signOut } from "@/auth";
+import { signIn, signOut } from "@/auth";
 import { getDb, schema } from "@/db";
 import type { PlanItemStatus } from "@/db/schema";
 import { newToken, sha256 } from "@/lib/crypto";
@@ -70,32 +70,59 @@ export async function saveGoals(_: ActionState, formData: FormData): Promise<Act
   return { message: "Goals saved. They apply from the next plan." };
 }
 
-export async function savePreferences(_: ActionState, formData: FormData): Promise<ActionState> {
+export async function saveTimezone(_: ActionState, formData: FormData): Promise<ActionState> {
   const userId = await requireUserId();
   const timezone = String(formData.get("timezone") ?? "").trim();
   try {
     new Intl.DateTimeFormat("en", { timeZone: timezone });
   } catch {
-    return { message: `"${timezone}" isn't a timezone name like Asia/Muscat.` };
+    return { message: `"${timezone}" isn't a timezone like Asia/Muscat.` };
   }
+  const db = await getDb();
+  await db.update(schema.users).set({ timezone }).where(eq(schema.users.id, userId));
+  revalidatePath("/", "layout");
+  return { message: "Saved." };
+}
+
+export async function saveBlocklist(_: ActionState, formData: FormData): Promise<ActionState> {
+  const userId = await requireUserId();
   const blocklist = String(formData.get("blocklist") ?? "")
     .split(/[\s,]+/)
     .map((d) => d.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").replace(/\/.*$/, ""))
     .filter((d) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(d))
     .slice(0, 200);
   const db = await getDb();
-  await db.update(schema.users).set({ timezone, blocklist }).where(eq(schema.users.id, userId));
+  await db.update(schema.users).set({ blocklist }).where(eq(schema.users.id, userId));
   revalidatePath("/settings");
-  return { message: "Saved. The extension picks up the blocklist within an hour." };
+  return { message: `Saved. ${blocklist.length} ${blocklist.length === 1 ? "site" : "sites"} blocked.` };
 }
 
-export async function createExtensionToken(): Promise<ActionState> {
+export async function setMorningEmail(formData: FormData) {
   const userId = await requireUserId();
+  const db = await getDb();
+  await db
+    .update(schema.users)
+    .set({ morningEmail: formData.get("on") === "on" })
+    .where(eq(schema.users.id, userId));
+  revalidatePath("/settings");
+}
+
+export async function createExtensionToken(_: ActionState, formData: FormData): Promise<ActionState> {
+  const userId = await requireUserId();
+  const label = String(formData.get("label") ?? "").trim().slice(0, 40) || "Chrome";
   const token = newToken();
   const db = await getDb();
-  await db.insert(schema.extensionTokens).values({ userId, tokenHash: sha256(token) });
+  await db.insert(schema.extensionTokens).values({ userId, label, tokenHash: sha256(token) });
   revalidatePath("/settings");
-  return { token, message: "Copy this now. It is shown once." };
+  return { token, message: "Paste this code into the extension. It's shown only once." };
+}
+
+export async function reconnectGmail() {
+  await signIn("google", { redirectTo: "/settings" });
+}
+
+export async function signOutAction() {
+  await signOut({ redirectTo: "/login" });
 }
 
 export async function revokeExtensionToken(formData: FormData) {

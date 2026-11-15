@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV = [
-  ["/today", "Today"],
+  ["/today", "Dashboard"],
   ["/inbox", "Inbox"],
   ["/attention", "Attention"],
   ["/settings", "Settings"],
@@ -21,10 +21,13 @@ export function Nav() {
             key={href}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={`rounded-md px-2.5 py-1.5 text-[13px] font-medium ${
-              active ? "bg-sunk text-ink" : "text-muted hover:text-ink"
+            className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] font-medium ${
+              active ? "bg-raised text-ink" : "text-muted hover:text-ink"
             }`}
           >
+            <span
+              className={`hidden size-1.5 rounded-full sm:block ${active ? "bg-accent shadow-[0_0_8px_var(--accent)]" : "bg-transparent"}`}
+            />
             {label}
           </Link>
         );

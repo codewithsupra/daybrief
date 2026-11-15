@@ -1,13 +1,13 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { schema } from "@/db";
-import type { AttentionCategory } from "@/db/schema";
+import { CATEGORY_ORDER, WeekChart, categoryColor } from "@/components/week-chart";
 import { summarizeDay, topSites, topVideos, type Ranked } from "@/lib/attention";
 import { CATEGORY_LABELS } from "@/lib/categorize";
 import { formatMinutes, lastDays } from "@/lib/days";
 import { requireUser } from "@/lib/user";
 
-const ORDER = Object.keys(CATEGORY_LABELS) as AttentionCategory[];
-const color = (c: AttentionCategory) => `var(--c-${c})`;
+const ORDER = CATEGORY_ORDER;
+const color = categoryColor;
 
 function RankList({ title, rows, empty }: { title: string; rows: Ranked[]; empty: string }) {
   const max = Math.max(1, ...rows.map((r) => r.minutes));
@@ -22,7 +22,7 @@ function RankList({ title, rows, empty }: { title: string; rows: Ranked[]; empty
             <li key={r.label} className="row relative flex items-center gap-3 px-3 py-1.5 text-[13px]">
               <span
                 aria-hidden
-                className="absolute inset-y-0 left-0 opacity-15"
+                className="absolute inset-y-0 left-0 opacity-20"
                 style={{ width: `${(r.minutes / max) * 100}%`, background: color(r.category) }}
               />
               <span className="size-2 shrink-0 rounded-sm" style={{ background: color(r.category) }} />
@@ -53,12 +53,9 @@ export default async function Attention({ searchParams }: { searchParams: Promis
     .from(schema.browseEvents)
     .where(and(eq(schema.browseEvents.userId, user.id), inArray(schema.browseEvents.day, days)));
   const summaries = days.map((d) => summarizeDay(d, events));
-  const peak = Math.max(1, ...summaries.map((s) => s.totalMinutes));
   const current = summaries.find((s) => s.day === day)!;
   const dayEvents = events.filter((e) => e.day === day);
   const weekTotal = summaries.reduce((s, d) => s + d.totalMinutes, 0);
-  const label = (d: string) =>
-    new Date(`${d}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", timeZone: "UTC" });
 
   if (events.length === 0) {
     return (
@@ -89,44 +86,8 @@ export default async function Attention({ searchParams }: { searchParams: Promis
         <span className="t-small text-muted">{formatMinutes(weekTotal)} in the browser over 7 days</span>
       </div>
 
-      <div className="panel mt-4 px-3 pb-2 pt-3">
-        <div className="flex h-32 items-end gap-1.5" role="list" aria-label="Time per day by category">
-          {summaries.map((s) => (
-            <a
-              key={s.day}
-              role="listitem"
-              href={`/attention?day=${s.day}`}
-              aria-label={`${label(s.day)} ${s.day}: ${formatMinutes(s.totalMinutes)}, ${s.alignedPct}% on goals`}
-              aria-current={s.day === day ? "true" : undefined}
-              className={`flex h-full min-w-0 flex-1 flex-col justify-end rounded-md px-1 pb-1 ${
-                s.day === day ? "bg-sunk" : "hover:bg-sunk"
-              }`}
-            >
-              <div className="t-small text-center tabular-nums text-faint">
-                {s.totalMinutes ? formatMinutes(s.totalMinutes) : ""}
-              </div>
-              <div
-                className="flex flex-col-reverse gap-px overflow-hidden rounded-sm"
-                style={{ height: `${(s.totalMinutes / peak) * 72}%` }}
-              >
-                {ORDER.map((c) =>
-                  s.byCategory[c] ? <div key={c} style={{ flexGrow: s.byCategory[c], background: color(c) }} /> : null,
-                )}
-              </div>
-              <div className={`t-small pt-1 text-center ${s.day === day ? "font-semibold" : "text-muted"}`}>
-                {label(s.day)}
-              </div>
-            </a>
-          ))}
-        </div>
-        <ul className="t-small mt-2 flex flex-wrap gap-x-3 gap-y-1 border-t border-line pt-2 text-muted">
-          {ORDER.filter((c) => summaries.some((s) => s.byCategory[c])).map((c) => (
-            <li key={c} className="flex items-center gap-1.5">
-              <span className="size-2 rounded-sm" style={{ background: color(c) }} />
-              {CATEGORY_LABELS[c]}
-            </li>
-          ))}
-        </ul>
+      <div className="panel mt-4 p-3.5">
+        <WeekChart summaries={summaries} selected={day} height={150} />
       </div>
 
       <div className="mt-6 flex items-baseline justify-between">

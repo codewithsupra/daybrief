@@ -12,7 +12,10 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
   const { error } = await searchParams;
   return (
     <main className="mx-auto flex min-h-screen max-w-xs flex-col justify-center px-4">
-      <h1 className="t-page">Daybrief</h1>
+      <h1 className="t-page flex items-center gap-2">
+        <span className="size-2.5 rounded-sm bg-accent shadow-[0_0_12px_var(--accent)]" />
+        Daybrief
+      </h1>
       <p className="mt-1 text-muted">A daily plan from your inbox and your browsing.</p>
       {error && (
         <p role="alert" className="mt-4 rounded-md border border-line bg-surface p-2.5 text-[13px] text-warn">

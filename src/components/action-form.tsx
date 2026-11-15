@@ -25,7 +25,7 @@ export function ActionForm({
         {pending ? (pendingLabel ?? "Working…") : label}
       </button>
       {state?.token && (
-        <code className="t-small w-full select-all break-all rounded bg-sunk px-2 py-1">{state.token}</code>
+        <code className="t-small w-full select-all break-all rounded bg-raised px-2 py-1">{state.token}</code>
       )}
       {state?.message && (
         <span role="status" className="t-small text-muted">
