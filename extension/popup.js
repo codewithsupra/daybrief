@@ -16,23 +16,41 @@ async function render() {
 }
 
 $("save").addEventListener("click", async () => {
-  const server = $("server").value.trim().replace(/\/+$/, "");
   let origin;
   try {
-    origin = new URL(server).origin;
+    origin = new URL($("server").value.trim()).origin;
   } catch {
     $("status").textContent = "That address isn't a valid URL.";
     return;
   }
-  // Ask for permission to talk to this one server only.
-  const granted = await chrome.permissions.request({ origins: [`${origin}/*`] });
-  if (!granted) {
-    $("status").textContent = "Permission to reach the app was declined.";
+  const token = $("token").value.trim();
+  if (!token) {
+    $("status").textContent = "Paste the code from Daybrief's Settings page.";
     return;
   }
-  await chrome.storage.local.set({ server: origin, token: $("token").value.trim(), lastError: null });
-  await chrome.runtime.sendMessage("settings-changed");
-  render();
+  // Store first, so nothing is lost if this popup closes.
+  await chrome.storage.local.set({ server: origin, token, lastError: null });
+
+  // Check the address and code right away and say what happened.
+  $("status").textContent = "Checking…";
+  try {
+    const res = await fetch(`${origin}/api/ingest`, { headers: { authorization: `Bearer ${token}` } });
+    if (res.status === 401) {
+      $("status").textContent = "Daybrief didn't accept that code. Create a new one in Settings.";
+      return;
+    }
+    if (!res.ok) {
+      $("status").textContent = `Daybrief answered with an error (${res.status}).`;
+      return;
+    }
+    const { blocklist } = await res.json();
+    await chrome.storage.local.set({ blocklist, blocklistAt: Date.now() });
+  } catch {
+    $("status").textContent = "Can't reach Daybrief at that address. Is it running?";
+    return;
+  }
+  chrome.runtime.sendMessage("settings-changed").catch(() => {});
+  $("status").textContent = "Connected. Recording the active tab.";
 });
 
 $("pause").addEventListener("click", async () => {
