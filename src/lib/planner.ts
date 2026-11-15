@@ -37,12 +37,12 @@ export type DraftItem = {
 export type DraftPlan = { summary: string; items: DraftItem[]; source: "model" | "fallback" };
 
 const planSchema = z.object({
-  summary: z.string().describe("Two sentences: how yesterday went against the goals, and today's focus."),
+  summary: z.string().describe("Two short sentences, under 35 words in total: how yesterday went against the goals, then today's focus."),
   items: z
     .array(
       z.object({
-        title: z.string().describe("An action starting with a verb, specific enough to begin immediately."),
-        why: z.string().describe("One sentence tying it to the evidence."),
+        title: z.string().describe("An action starting with a verb, at most 9 words. One action only, no 'and'."),
+        why: z.string().describe("One short sentence, at most 16 words, giving the evidence."),
         goal: z.string().describe("Exact title of the goal it serves, or empty string."),
         minutes: z.number().describe("Honest time estimate in minutes."),
         sourceType: z.enum(["email", "web", "none"]),

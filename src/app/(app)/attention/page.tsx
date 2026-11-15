@@ -12,30 +12,28 @@ const color = (c: AttentionCategory) => `var(--c-${c})`;
 function RankList({ title, rows, empty }: { title: string; rows: Ranked[]; empty: string }) {
   const max = Math.max(1, ...rows.map((r) => r.minutes));
   return (
-    <section>
-      <h2 className="font-display text-xl">{title}</h2>
+    <section className="min-w-0">
+      <h2 className="t-section">{title}</h2>
       {rows.length === 0 ? (
-        <p className="mt-2 text-sm text-muted">{empty}</p>
+        <p className="panel mt-2 px-3 py-2 text-[13px] text-faint">{empty}</p>
       ) : (
-        <ul className="mt-2 space-y-2">
+        <ul className="panel mt-2">
           {rows.map((r) => (
-            <li key={r.label} className="text-sm">
-              <div className="flex justify-between gap-3">
-                {r.url ? (
-                  <a className="min-w-0 truncate hover:underline" href={r.url} target="_blank" rel="noreferrer">
-                    {r.label}
-                  </a>
-                ) : (
-                  <span className="min-w-0 truncate">{r.label}</span>
-                )}
-                <span className="shrink-0 tabular-nums text-muted">{formatMinutes(r.minutes)}</span>
-              </div>
-              <div className="mt-1 h-1.5 rounded-full bg-sunk">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${(r.minutes / max) * 100}%`, background: color(r.category) }}
-                />
-              </div>
+            <li key={r.label} className="row relative flex items-center gap-3 px-3 py-1.5 text-[13px]">
+              <span
+                aria-hidden
+                className="absolute inset-y-0 left-0 opacity-15"
+                style={{ width: `${(r.minutes / max) * 100}%`, background: color(r.category) }}
+              />
+              <span className="size-2 shrink-0 rounded-sm" style={{ background: color(r.category) }} />
+              {r.url ? (
+                <a className="relative min-w-0 flex-1 truncate hover:underline" href={r.url} target="_blank" rel="noreferrer">
+                  {r.label}
+                </a>
+              ) : (
+                <span className="relative min-w-0 flex-1 truncate">{r.label}</span>
+              )}
+              <span className="relative shrink-0 tabular-nums text-muted">{formatMinutes(r.minutes)}</span>
             </li>
           ))}
         </ul>
@@ -64,111 +62,107 @@ export default async function Attention({ searchParams }: { searchParams: Promis
 
   if (events.length === 0) {
     return (
-      <div>
-        <h1 className="font-display text-3xl">Attention</h1>
-        <p className="mt-3 max-w-prose text-muted">
-          Nothing recorded in the last 7 days. Install the Chrome extension from the{" "}
-          <code className="rounded bg-sunk px-1">extension</code> folder and paste a token from{" "}
+      <div className="max-w-[680px]">
+        <h1 className="t-page">Attention</h1>
+        <p className="mt-2 text-muted">
+          Nothing recorded in the last 7 days. Load the Chrome extension and paste a token from{" "}
           <a className="underline" href="/settings">
             Settings
-          </a>{" "}
-          into it.
+          </a>
+          .
         </p>
       </div>
     );
   }
 
-  return (
-    <div>
-      <h1 className="font-display text-3xl">Attention</h1>
-      <p className="text-sm text-muted">
-        {formatMinutes(weekTotal)} of active browser time over 7 days. Pick a day for detail.
-      </p>
+  const dayTitle = new Date(`${day}T12:00:00Z`).toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  });
 
-      <div className="mt-6 flex h-44 items-end gap-2" role="list" aria-label="Time per day by category">
-        {summaries.map((s) => (
-          <a
-            key={s.day}
-            role="listitem"
-            href={`/attention?day=${s.day}`}
-            aria-label={`${label(s.day)} ${s.day}: ${formatMinutes(s.totalMinutes)}, ${s.alignedPct}% on goals`}
-            aria-current={s.day === day ? "true" : undefined}
-            className="flex h-full min-w-0 flex-1 flex-col justify-end"
-          >
-            <div className="text-center text-[11px] tabular-nums text-muted">
-              {s.totalMinutes ? formatMinutes(s.totalMinutes) : ""}
-            </div>
-            <div
-              className="flex flex-col-reverse overflow-hidden rounded-t"
-              style={{ height: `${(s.totalMinutes / peak) * 80}%` }}
-            >
-              {ORDER.map((c) =>
-                s.byCategory[c] ? (
-                  <div key={c} style={{ flexGrow: s.byCategory[c], background: color(c) }} />
-                ) : null,
-              )}
-            </div>
-            <div
-              className={`border-t pt-1 text-center text-xs ${
-                s.day === day ? "border-ink font-semibold" : "border-line text-muted"
-              }`}
-            >
-              {label(s.day)}
-            </div>
-          </a>
-        ))}
+  return (
+    <div className="max-w-[760px]">
+      <div className="flex items-baseline gap-3">
+        <h1 className="t-page">Attention</h1>
+        <span className="t-small text-muted">{formatMinutes(weekTotal)} in the browser over 7 days</span>
       </div>
 
-      <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-        {ORDER.filter((c) => summaries.some((s) => s.byCategory[c])).map((c) => (
-          <li key={c} className="flex items-center gap-1.5">
-            <span className="size-2.5 rounded-sm" style={{ background: color(c) }} />
-            {CATEGORY_LABELS[c]}
-          </li>
-        ))}
-      </ul>
+      <div className="panel mt-4 px-3 pb-2 pt-3">
+        <div className="flex h-32 items-end gap-1.5" role="list" aria-label="Time per day by category">
+          {summaries.map((s) => (
+            <a
+              key={s.day}
+              role="listitem"
+              href={`/attention?day=${s.day}`}
+              aria-label={`${label(s.day)} ${s.day}: ${formatMinutes(s.totalMinutes)}, ${s.alignedPct}% on goals`}
+              aria-current={s.day === day ? "true" : undefined}
+              className={`flex h-full min-w-0 flex-1 flex-col justify-end rounded-md px-1 pb-1 ${
+                s.day === day ? "bg-sunk" : "hover:bg-sunk"
+              }`}
+            >
+              <div className="t-small text-center tabular-nums text-faint">
+                {s.totalMinutes ? formatMinutes(s.totalMinutes) : ""}
+              </div>
+              <div
+                className="flex flex-col-reverse gap-px overflow-hidden rounded-sm"
+                style={{ height: `${(s.totalMinutes / peak) * 72}%` }}
+              >
+                {ORDER.map((c) =>
+                  s.byCategory[c] ? <div key={c} style={{ flexGrow: s.byCategory[c], background: color(c) }} /> : null,
+                )}
+              </div>
+              <div className={`t-small pt-1 text-center ${s.day === day ? "font-semibold" : "text-muted"}`}>
+                {label(s.day)}
+              </div>
+            </a>
+          ))}
+        </div>
+        <ul className="t-small mt-2 flex flex-wrap gap-x-3 gap-y-1 border-t border-line pt-2 text-muted">
+          {ORDER.filter((c) => summaries.some((s) => s.byCategory[c])).map((c) => (
+            <li key={c} className="flex items-center gap-1.5">
+              <span className="size-2 rounded-sm" style={{ background: color(c) }} />
+              {CATEGORY_LABELS[c]}
+            </li>
+          ))}
+        </ul>
+      </div>
 
-      <section className="mt-10">
-        <h2 className="font-display text-xl">
-          {new Date(`${day}T12:00:00Z`).toLocaleDateString("en-GB", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-            timeZone: "UTC",
-          })}
-        </h2>
-        {current.totalMinutes === 0 ? (
-          <p className="mt-2 text-sm text-muted">Nothing recorded this day.</p>
-        ) : (
-          <>
-            <p className="mt-1 text-sm text-muted">
-              {formatMinutes(current.totalMinutes)} tracked · {current.alignedPct}% on your goals
-            </p>
-            <table className="mt-3 w-full text-sm">
-              <tbody>
-                {ORDER.filter((c) => current.byCategory[c]).map((c) => (
-                  <tr key={c} className="border-t border-line">
-                    <td className="py-1.5">
-                      <span className="mr-2 inline-block size-2.5 rounded-sm" style={{ background: color(c) }} />
-                      {CATEGORY_LABELS[c]}
-                    </td>
-                    <td className="py-1.5 text-right tabular-nums text-muted">
-                      {formatMinutes(current.byCategory[c]!)}
-                    </td>
-                    <td className="w-14 py-1.5 text-right tabular-nums text-muted">
-                      {Math.round((current.byCategory[c]! / current.totalMinutes) * 100)}%
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
+      <div className="mt-6 flex items-baseline justify-between">
+        <h2 className="t-section">{dayTitle}</h2>
+        {current.totalMinutes > 0 && (
+          <span className="t-small tabular-nums text-muted">
+            {formatMinutes(current.totalMinutes)} tracked, {current.alignedPct}% on goals
+          </span>
         )}
-      </section>
+      </div>
+      {current.totalMinutes === 0 ? (
+        <p className="panel mt-2 px-3 py-2 text-[13px] text-faint">Nothing recorded this day.</p>
+      ) : (
+        <table className="panel mt-2 w-full border-separate border-spacing-0 text-[13px]">
+          <tbody>
+            {ORDER.filter((c) => current.byCategory[c]).map((c, i) => (
+              <tr key={c}>
+                <td className={`px-3 py-1.5 ${i ? "border-t border-line" : ""}`}>
+                  <span className="mr-2 inline-block size-2 rounded-sm" style={{ background: color(c) }} />
+                  {CATEGORY_LABELS[c]}
+                </td>
+                <td className={`py-1.5 text-right tabular-nums text-muted ${i ? "border-t border-line" : ""}`}>
+                  {formatMinutes(current.byCategory[c]!)}
+                </td>
+                <td className={`w-14 px-3 py-1.5 text-right tabular-nums text-faint ${i ? "border-t border-line" : ""}`}>
+                  {Math.round((current.byCategory[c]! / current.totalMinutes) * 100)}%
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
-      <div className="mt-10 grid gap-10 sm:grid-cols-2">
-        <RankList title="Top sites" rows={topSites(dayEvents)} empty="No sites this day." />
-        <RankList title="Top videos" rows={topVideos(dayEvents)} empty="No YouTube videos this day." />
+      <div className="mt-6 grid gap-6 sm:grid-cols-2">
+        <RankList title="Sites" rows={topSites(dayEvents)} empty="No sites this day." />
+        <RankList title="Videos" rows={topVideos(dayEvents)} empty="No YouTube videos this day." />
       </div>
     </div>
   );

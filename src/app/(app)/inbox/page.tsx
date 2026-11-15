@@ -5,45 +5,46 @@ import { loadInbox, type InboxRow as Row } from "@/lib/inbox";
 import { requireUser } from "@/lib/user";
 import { prepareDraftAction, syncInboxAction } from "../actions";
 
-const ago = (days: number) => {
-  return days === 0 ? "today" : days === 1 ? "yesterday" : `${days} days ago`;
-};
+const ago = (days: number) => (days === 0 ? "today" : days === 1 ? "1d ago" : `${days}d ago`);
 
-function Section({ title, hint, rows, draft }: { title: string; hint: string; rows: Row[]; draft?: boolean }) {
+function Section({ title, rows, draft }: { title: string; rows: Row[]; draft?: boolean }) {
   return (
-    <section className="mt-10">
-      <h2 className="flex items-baseline gap-2 font-display text-xl">
-        {title} <span className="font-sans text-sm text-muted">{rows.length}</span>
+    <section className="mt-5">
+      <h2 className="t-section">
+        {title} <span className="font-normal tabular-nums text-faint">{rows.length}</span>
       </h2>
-      <p className="text-sm text-muted">{hint}</p>
       {rows.length === 0 ? (
-        <p className="mt-3 border-t border-line pt-3 text-sm text-muted">Nothing here.</p>
+        <p className="panel mt-2 px-3 py-2 text-[13px] text-faint">Nothing here.</p>
       ) : (
-        <ul className="mt-3">
+        <ul className="panel mt-2">
           {rows.map((r) => (
-            <li key={r.threadId} className="border-t border-line py-3">
-              <div className="flex items-baseline justify-between gap-3">
-                <a
-                  className="min-w-0 truncate font-medium hover:underline"
-                  href={`https://mail.google.com/mail/u/0/#all/${r.threadId}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {r.subject}
-                </a>
-                <span className="shrink-0 text-xs text-muted">
-                  {r.dueDate ? `due ${r.dueDate}` : ago(r.daysOld)}
-                </span>
-              </div>
-              <p className="text-sm text-muted">
-                {r.fromName} · {r.reason}
-              </p>
-              {draft && (
-                <div className="mt-2">
-                  <ActionForm action={prepareDraftAction} label="Prepare draft" pendingLabel="Writing draft…">
-                    <input type="hidden" name="threadId" value={r.threadId} />
-                  </ActionForm>
+            <li key={r.threadId} className="row flex items-start gap-3 px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="w-32 shrink-0 truncate font-medium">{r.fromName}</span>
+                  <a
+                    className="min-w-0 truncate hover:underline"
+                    href={`https://mail.google.com/mail/u/0/#all/${r.threadId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {r.subject}
+                  </a>
                 </div>
+                <p className="truncate text-[13px] text-muted">{r.reason}</p>
+              </div>
+              <span className={`t-small shrink-0 pt-0.5 tabular-nums ${r.dueDate ? "text-warn" : "text-faint"}`}>
+                {r.dueDate ? `due ${r.dueDate.slice(5)}` : ago(r.daysOld)}
+              </span>
+              {draft && (
+                <ActionForm
+                  action={prepareDraftAction}
+                  label="Draft reply"
+                  pendingLabel="Drafting…"
+                  className="btn btn-sm"
+                >
+                  <input type="hidden" name="threadId" value={r.threadId} />
+                </ActionForm>
               )}
             </li>
           ))}
@@ -62,33 +63,27 @@ export default async function Inbox() {
     .where(eq(schema.googleAccounts.userId, user.id));
 
   return (
-    <div>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl">Inbox</h1>
-          <p className="text-sm text-muted">
-            {account?.lastSyncAt
-              ? `Last checked ${account.lastSyncAt.toLocaleString("en-GB", { timeZone: user.timezone, dateStyle: "medium", timeStyle: "short" })}`
-              : "Not checked yet"}
-            . Newsletters, receipts and FYIs are left out.
-          </p>
+    <div className="max-w-[760px]">
+      <div className="flex items-center gap-3">
+        <h1 className="t-page">Inbox</h1>
+        <span className="t-small text-muted">
+          {account?.lastSyncAt
+            ? `Checked ${account.lastSyncAt.toLocaleString("en-GB", { timeZone: user.timezone, day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}`
+            : "Not checked yet"}
+        </span>
+        <div className="ml-auto">
+          <ActionForm action={syncInboxAction} label="Check now" pendingLabel="Checking…" />
         </div>
-        <ActionForm action={syncInboxAction} label="Check now" pendingLabel="Checking Gmail…" />
       </div>
-      <Section
-        title="Waiting on you"
-        hint="Someone is expecting an answer."
-        rows={rows.filter((r) => r.category === "needs_reply")}
-        draft
-      />
+      <Section title="Waiting on you" rows={rows.filter((r) => r.category === "needs_reply")} draft />
       <Section
         title="Deadlines"
-        hint="Something to do by a date."
-        rows={rows.filter((r) => r.category === "deadline").sort((a, b) => (a.dueDate ?? "9").localeCompare(b.dueDate ?? "9"))}
+        rows={rows
+          .filter((r) => r.category === "deadline")
+          .sort((a, b) => (a.dueDate ?? "9").localeCompare(b.dueDate ?? "9"))}
       />
       <Section
-        title="Gone quiet"
-        hint="You wrote last, three or more days ago, and haven't heard back."
+        title="No reply in 3+ days"
         rows={rows.filter((r) => r.category === "waiting" && r.daysOld >= 3)}
         draft
       />

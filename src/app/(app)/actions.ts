@@ -18,7 +18,7 @@ export async function buildPlanAction(): Promise<ActionState> {
   const userId = await requireUserId();
   const r = await runDaily(userId, { email: false });
   revalidatePath("/", "layout");
-  const base = `Plan built from ${r.source === "model" ? "the model" : "rules (no AI key, or the model call failed)"}.`;
+  const base = r.source === "model" ? "Updated." : "Updated using simple rules; the AI model wasn't reachable.";
   return { message: [base, ...r.warnings].join(" ") };
 }
 

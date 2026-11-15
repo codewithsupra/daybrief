@@ -6,15 +6,31 @@ import { sourceUrl } from "@/lib/planner";
 import { requireUser } from "@/lib/user";
 import { buildPlanAction, prepareDraftAction, setItemStatus } from "../actions";
 
-function StatusButton({ id, status, label, quiet }: { id: string; status: string; label: string; quiet?: boolean }) {
+function SetStatus({
+  id,
+  status,
+  children,
+  className,
+  label,
+}: {
+  id: string;
+  status: string;
+  children?: React.ReactNode;
+  className: string;
+  label?: string;
+}) {
   return (
-    <form action={setItemStatus}>
+    <form action={setItemStatus} className="flex">
       <input type="hidden" name="id" value={id} />
       <input type="hidden" name="status" value={status} />
-      <button className={quiet ? "btn btn-quiet px-2" : "btn"}>{label}</button>
+      <button className={className} aria-label={label}>
+        {children}
+      </button>
     </form>
   );
 }
+
+const STATUS_LABEL = { done: "Done", snoozed: "Later", dismissed: "Hidden", open: "" } as const;
 
 export default async function Today() {
   const { db, user, today } = await requireUser();
@@ -31,9 +47,9 @@ export default async function Today() {
     : [];
 
   const date = new Date(`${today}T12:00:00Z`).toLocaleDateString("en-GB", {
-    weekday: "long",
+    weekday: "short",
     day: "numeric",
-    month: "long",
+    month: "short",
     timeZone: "UTC",
   });
   const open = items.filter((i) => i.status === "open");
@@ -41,113 +57,116 @@ export default async function Today() {
   const remaining = open.reduce((sum, i) => sum + i.minutes, 0);
 
   return (
-    <div>
-      <p className="text-sm uppercase tracking-widest text-muted">{date}</p>
-      {!plan ? (
-        <div className="mt-4">
-          <h1 className="font-display text-3xl">No plan for today yet</h1>
-          <p className="mt-2 max-w-prose text-muted">
-            Building one checks your inbox, looks at yesterday&apos;s browsing and writes 5–7 actions. It
-            also runs on its own each morning.
-          </p>
-          <div className="mt-6">
-            <ActionForm
-              action={buildPlanAction}
-              label="Build today's plan"
-              pendingLabel="Reading inbox and writing plan…"
-              className="btn btn-primary"
-            />
-          </div>
+    <div className="max-w-[680px]">
+      <div className="flex items-center gap-3">
+        <h1 className="t-page">Today</h1>
+        <span className="text-muted">{date}</span>
+        <div className="ml-auto">
+          <ActionForm
+            action={buildPlanAction}
+            label={plan ? "Rebuild" : "Build plan"}
+            pendingLabel="Building…"
+            className={plan ? "btn" : "btn btn-primary"}
+          />
         </div>
+      </div>
+
+      {!plan ? (
+        <p className="mt-4 text-muted">
+          No plan yet. Building one checks your inbox and yesterday&apos;s browsing. It also runs each morning.
+        </p>
       ) : (
         <>
-          <h1 className="mt-3 max-w-prose font-display text-2xl leading-snug sm:text-3xl">{plan.summary}</h1>
+          <p className="mt-2 max-w-[62ch] text-muted">{plan.summary}</p>
 
-          <dl className="mt-6 grid grid-cols-3 gap-2 text-sm">
+          <dl className="panel mt-4 grid grid-cols-3 divide-x divide-line">
             {[
-              [String(plan.metrics.needsReply), "emails waiting on you"],
-              [`${plan.metrics.alignedPct}%`, "of yesterday on your goals"],
+              [String(plan.metrics.needsReply), "waiting on you"],
+              [`${plan.metrics.alignedPct}%`, "on goals yesterday"],
               [formatMinutes(plan.metrics.totalMinutes), "tracked yesterday"],
             ].map(([n, label]) => (
-              <div key={label} className="rounded-md bg-sunk p-3">
-                <dd className="font-display text-2xl">{n}</dd>
-                <dt className="text-xs text-muted">{label}</dt>
+              <div key={label} className="flex flex-wrap items-baseline gap-x-1.5 px-3 py-2">
+                <dd className="text-[16px] font-semibold tabular-nums">{n}</dd>
+                <dt className="t-small text-muted">{label}</dt>
               </div>
             ))}
           </dl>
 
-          <h2 className="mt-10 flex items-baseline justify-between text-sm font-semibold uppercase tracking-wider text-muted">
-            <span>To do</span>
-            <span className="font-normal normal-case tracking-normal">
-              {open.length} left · about {formatMinutes(remaining)}
+          <div className="mt-6 flex items-baseline justify-between">
+            <h2 className="t-section">To do</h2>
+            <span className="t-small tabular-nums text-muted">
+              {open.length} left, about {formatMinutes(remaining)}
             </span>
-          </h2>
-          {open.length === 0 && <p className="mt-4 text-muted">Everything on today&apos;s plan is handled.</p>}
-          <ol className="mt-2">
-            {open.map((item, n) => {
-              const url = sourceUrl(item);
-              return (
-                <li key={item.id} className="flex gap-4 border-t border-line py-4">
-                  <span className="w-5 pt-0.5 font-display text-lg text-muted">{n + 1}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium">
-                      {item.title} <span className="font-normal text-muted">· {item.minutes}m</span>
-                    </p>
-                    <p className="mt-1 text-sm text-muted">{item.why}</p>
-                    {item.goal && <p className="mt-1 text-xs text-good">For: {item.goal}</p>}
-                    <div className="mt-3 flex flex-wrap items-start gap-2">
-                      <StatusButton id={item.id} status="done" label="Done" />
-                      {url && (
-                        <a className="btn" href={url} target="_blank" rel="noreferrer">
-                          {item.sourceType === "email" ? "Open email" : "Open link"}
-                        </a>
-                      )}
-                      {item.sourceType === "email" && item.sourceRef && (
-                        <ActionForm action={prepareDraftAction} label="Prepare draft" pendingLabel="Writing draft…">
-                          <input type="hidden" name="threadId" value={item.sourceRef} />
-                        </ActionForm>
-                      )}
-                      <StatusButton id={item.id} status="snoozed" label="Not today" quiet />
-                      <StatusButton id={item.id} status="dismissed" label="Don't suggest" quiet />
+          </div>
+
+          {open.length === 0 ? (
+            <p className="panel mt-2 px-3 py-3 text-muted">Everything on today&apos;s plan is handled.</p>
+          ) : (
+            <ul className="panel mt-2">
+              {open.map((item) => {
+                const url = sourceUrl(item);
+                return (
+                  <li key={item.id} className="row flex gap-2.5 px-3 py-2.5">
+                    <SetStatus id={item.id} status="done" className="check" label={`Mark done: ${item.title}`} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-3">
+                        <p className="min-w-0 flex-1 font-medium">{item.title}</p>
+                        <span className="t-small shrink-0 tabular-nums text-faint">{item.minutes}m</span>
+                      </div>
+                      <p className="text-[13px] text-muted">{item.why}</p>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                        {url && (
+                          <a className="btn btn-sm" href={url} target="_blank" rel="noreferrer">
+                            {item.sourceType === "email" ? "Open email" : "Open link"}
+                          </a>
+                        )}
+                        {item.sourceType === "email" && item.sourceRef && (
+                          <ActionForm
+                            action={prepareDraftAction}
+                            label="Draft reply"
+                            pendingLabel="Drafting…"
+                            className="btn btn-sm"
+                          >
+                            <input type="hidden" name="threadId" value={item.sourceRef} />
+                          </ActionForm>
+                        )}
+                        <SetStatus id={item.id} status="snoozed" className="btn btn-sm btn-ghost">
+                          Later
+                        </SetStatus>
+                        <SetStatus id={item.id} status="dismissed" className="btn btn-sm btn-ghost">
+                          Hide
+                        </SetStatus>
+                        {item.goal && <span className="t-small ml-auto truncate text-good">{item.goal}</span>}
+                      </div>
                     </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
 
           {closed.length > 0 && (
             <>
-              <h2 className="mt-8 text-sm font-semibold uppercase tracking-wider text-muted">Handled</h2>
-              <ul className="mt-2">
+              <h2 className="t-section mt-6">Handled</h2>
+              <ul className="panel mt-2">
                 {closed.map((item) => (
-                  <li key={item.id} className="flex items-center gap-3 border-t border-line py-2 text-sm text-muted">
-                    <span className="w-20 shrink-0 text-xs">
-                      {item.status === "done" ? "Done" : item.status === "snoozed" ? "Not today" : "Dismissed"}
-                    </span>
-                    <span className={`min-w-0 flex-1 ${item.status === "done" ? "line-through" : ""}`}>
+                  <li key={item.id} className="row flex items-center gap-3 px-3 py-1.5 text-[13px] text-muted">
+                    <span className="t-small w-12 shrink-0 text-faint">{STATUS_LABEL[item.status]}</span>
+                    <span className={`min-w-0 flex-1 truncate ${item.status === "done" ? "line-through" : ""}`}>
                       {item.title}
                     </span>
-                    <StatusButton id={item.id} status="open" label="Undo" quiet />
+                    <SetStatus id={item.id} status="open" className="btn btn-sm btn-ghost">
+                      Undo
+                    </SetStatus>
                   </li>
                 ))}
               </ul>
             </>
           )}
 
-          <div className="mt-10 border-t border-line pt-4">
-            <ActionForm
-              action={buildPlanAction}
-              label="Rebuild plan"
-              pendingLabel="Reading inbox and writing plan…"
-              className="btn btn-quiet px-0"
-            />
-            {plan.source === "fallback" && (
-              <p className="mt-1 text-xs text-muted">
-                This plan was built from simple rules because no AI model was reachable.
-              </p>
-            )}
-          </div>
+          {plan.source === "fallback" && (
+            <p className="t-small mt-4 text-faint">Built from simple rules; the AI model wasn&apos;t reachable.</p>
+          )}
         </>
       )}
     </div>

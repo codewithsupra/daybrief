@@ -2,37 +2,36 @@ import { redirect } from "next/navigation";
 import { signIn } from "@/auth";
 import { currentUserId } from "@/lib/session";
 
+const ERRORS: Record<string, string> = {
+  AccessDenied: "That Google account isn't on the allowlist for this app.",
+  MissingGmail: "Gmail access wasn't granted. Sign in again and tick both Gmail boxes on Google's screen.",
+};
+
 export default async function Login({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   if (await currentUserId()) redirect("/today");
   const { error } = await searchParams;
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4">
-      <h1 className="font-display text-4xl">Daybrief</h1>
-      <p className="mt-3 text-muted">
-        One plan each morning, built from your inbox and where your attention went yesterday.
-      </p>
+    <main className="mx-auto flex min-h-screen max-w-xs flex-col justify-center px-4">
+      <h1 className="t-page">Daybrief</h1>
+      <p className="mt-1 text-muted">A daily plan from your inbox and your browsing.</p>
       {error && (
-        <p role="alert" className="mt-6 rounded-md border border-line bg-sunk p-3 text-sm">
-          {error === "AccessDenied"
-            ? "That Google account isn't on the allowlist for this app."
-            : error === "MissingGmail"
-              ? "Google signed you in, but the Gmail permissions weren't granted. Try again and tick both Gmail boxes on Google's permission screen."
-              : "Sign-in didn't complete. Try again."}
+        <p role="alert" className="mt-4 rounded-md border border-line bg-surface p-2.5 text-[13px] text-warn">
+          {ERRORS[error] ?? "Sign-in didn't complete. Try again."}
         </p>
       )}
       <form
-        className="mt-8"
+        className="mt-5"
         action={async () => {
           "use server";
           await signIn("google", { redirectTo: "/today" });
         }}
       >
-        <button className="btn btn-primary w-full justify-center py-2.5">Continue with Google</button>
+        <button className="btn btn-primary h-9 w-full">Continue with Google</button>
       </form>
-      <p className="mt-4 text-xs text-muted">
-        Asks to read your Gmail and create drafts. It never sends, archives or deletes mail.{" "}
+      <p className="t-small mt-3 text-faint">
+        Reads Gmail and creates drafts. Never sends or deletes.{" "}
         <a className="underline" href="/privacy">
-          What is collected
+          What&apos;s collected
         </a>
       </p>
     </main>

@@ -19,18 +19,18 @@ export function ActionForm({
 }) {
   const [state, formAction, pending] = useActionState(action, null);
   return (
-    <form action={formAction} className="space-y-2">
+    <form action={formAction} className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
       {children}
       <button className={className} disabled={pending}>
         {pending ? (pendingLabel ?? "Working…") : label}
       </button>
       {state?.token && (
-        <code className="block select-all break-all rounded bg-sunk p-2 text-xs">{state.token}</code>
+        <code className="t-small w-full select-all break-all rounded bg-sunk px-2 py-1">{state.token}</code>
       )}
       {state?.message && (
-        <p role="status" className="text-sm text-muted">
+        <span role="status" className="t-small text-muted">
           {state.message}
-        </p>
+        </span>
       )}
     </form>
   );
