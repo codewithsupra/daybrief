@@ -15,7 +15,9 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
         <p role="alert" className="mt-6 rounded-md border border-line bg-sunk p-3 text-sm">
           {error === "AccessDenied"
             ? "That Google account isn't on the allowlist for this app."
-            : "Sign-in didn't complete. Try again."}
+            : error === "MissingGmail"
+              ? "Google signed you in, but the Gmail permissions weren't granted. Try again and tick both Gmail boxes on Google's permission screen."
+              : "Sign-in didn't complete. Try again."}
         </p>
       )}
       <form

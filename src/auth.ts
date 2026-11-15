@@ -5,14 +5,12 @@ import { getDb, schema } from "@/db";
 import { encrypt } from "@/lib/crypto";
 import { DEFAULT_GOALS } from "@/lib/defaults";
 
-const GMAIL_SCOPES = [
-  "openid",
-  "email",
-  "profile",
+const REQUIRED_SCOPES = [
   "https://www.googleapis.com/auth/gmail.readonly",
   // Used only to create drafts. The app never sends mail.
   "https://www.googleapis.com/auth/gmail.compose",
-].join(" ");
+];
+const GMAIL_SCOPES = ["openid", "email", "profile", ...REQUIRED_SCOPES].join(" ");
 
 function allowed(email: string | null | undefined): boolean {
   const list = (process.env.ALLOWED_EMAILS ?? "")
@@ -48,7 +46,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: { signIn: "/login", error: "/login" },
   callbacks: {
     // Only emails on the allowlist get in; everyone else is refused before any data is stored.
-    signIn: ({ profile }) => allowed(profile?.email),
+    signIn({ profile, account }) {
+      if (!allowed(profile?.email)) return false;
+      // Google lets people untick individual permissions. Without both, nothing can work.
+      const granted = (account?.scope ?? "").split(" ");
+      const missing = REQUIRED_SCOPES.some((s) => !granted.includes(s));
+      return missing ? "/login?error=MissingGmail" : true;
+    },
     async jwt({ token, account, profile }) {
       if (account && profile?.email) {
         const userId = await ensureUser(profile.email, profile.name);
