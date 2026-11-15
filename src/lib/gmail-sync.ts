@@ -4,7 +4,9 @@ import { accessTokenFor, gmail } from "./google";
 import { syncQuery, threadToRow, type GmailThread } from "./gmail-parse";
 
 const MAX_THREADS = 200;
-const CONCURRENCY = 8;
+// Each thread read costs 10 quota units; Gmail allows a few thousand units per user per minute.
+const CONCURRENCY = 4;
+const CHUNK = 20;
 
 async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
   const out: R[] = new Array(items.length);
@@ -44,25 +46,28 @@ export async function syncGmail(userId: string): Promise<number> {
     pageToken = page.nextPageToken;
   } while (pageToken && ids.length < MAX_THREADS);
 
-  const threads = await mapLimit(ids.slice(0, MAX_THREADS), CONCURRENCY, (id) =>
-    gmail<GmailThread>(
-      token,
-      `/threads/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`,
-    ),
-  );
-
+  // Fetch and store in small chunks so an interruption keeps what was already read.
   let count = 0;
-  for (const thread of threads) {
-    const row = threadToRow(thread);
-    if (!row) continue;
-    await db
-      .insert(schema.emailThreads)
-      .values({ userId, ...row })
-      .onConflictDoUpdate({
-        target: [schema.emailThreads.userId, schema.emailThreads.threadId],
-        set: row,
-      });
-    count++;
+  const wanted = ids.slice(0, MAX_THREADS);
+  for (let i = 0; i < wanted.length; i += CHUNK) {
+    const threads = await mapLimit(wanted.slice(i, i + CHUNK), CONCURRENCY, (id) =>
+      gmail<GmailThread>(
+        token,
+        `/threads/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject`,
+      ),
+    );
+    for (const thread of threads) {
+      const row = threadToRow(thread);
+      if (!row) continue;
+      await db
+        .insert(schema.emailThreads)
+        .values({ userId, ...row })
+        .onConflictDoUpdate({
+          target: [schema.emailThreads.userId, schema.emailThreads.threadId],
+          set: row,
+        });
+      count++;
+    }
   }
 
   await db
