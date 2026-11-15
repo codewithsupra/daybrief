@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { width: 300px; margin: 0; padding: 14px; font: 13px/1.4 system-ui, sans-serif; color: #1c1a17; background: #faf7f1; }
+      h1 { font: 600 16px Georgia, serif; margin: 0 0 10px; }
+      label { display: block; margin-top: 8px; color: #6b655a; }
+      input[type="text"], input[type="password"] { width: 100%; box-sizing: border-box; margin-top: 3px; padding: 6px; border: 1px solid #e4ded2; border-radius: 5px; font: inherit; }
+      button { margin-top: 10px; padding: 6px 10px; border: 1px solid #b4451f; border-radius: 5px; background: #b4451f; color: #fff; font: inherit; cursor: pointer; }
+      button.plain { background: #fff; color: #1c1a17; border-color: #e4ded2; }
+      #status { margin-top: 10px; color: #6b655a; }
+      .row { display: flex; gap: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>Daybrief</h1>
+    <label>App address<input id="server" type="text" placeholder="https://your-app.vercel.app" /></label>
+    <label>Token (from Settings)<input id="token" type="password" /></label>
+    <div class="row">
+      <button id="save">Save</button>
+      <button id="pause" class="plain">Pause recording</button>
+    </div>
+    <p id="status" role="status"></p>
+    <script src="popup.js"></script>
+  </body>
+</html>

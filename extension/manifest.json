@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Daybrief",
+  "version": "0.1.0",
+  "description": "Records the address, title and active time of the tab you're looking at for your Daybrief plan. Never page contents; never incognito.",
+  "permissions": ["tabs", "idle", "alarms", "storage", "scripting"],
+  "host_permissions": ["https://www.youtube.com/*"],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_popup": "popup.html", "default_title": "Daybrief" }
+}

@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "daybrief-demo",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["DEMO_MODE=1", "DEFAULT_TIMEZONE=Asia/Muscat", "pnpm", "dev", "--port", "3210"],
+      "port": 3210
+    },
+    {
+      "name": "daybrief",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev"],
+      "port": 3000
+    }
+  ]
+}
