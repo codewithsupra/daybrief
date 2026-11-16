@@ -1,10 +1,9 @@
 import { and, eq, inArray } from "drizzle-orm";
-import Link from "next/link";
 import { schema } from "@/db";
 import { ActionForm } from "@/components/action-form";
-import { Ring, SplitBar, WeekChart } from "@/components/week-chart";
+import { AttentionPanel, SitesPanel, StatTiles, WaitingPanel } from "@/components/dashboard-panels";
 import { summarizeDay, topSites } from "@/lib/attention";
-import { formatMinutes, lastDays, shiftDay } from "@/lib/days";
+import { lastDays, shiftDay } from "@/lib/days";
 import { loadInbox } from "@/lib/inbox";
 import { sourceUrl } from "@/lib/planner";
 import { requireUser } from "@/lib/user";
@@ -65,7 +64,6 @@ export default async function Dashboard() {
     events.filter((e) => e.day === yesterday),
     5,
   );
-  const siteMax = Math.max(1, ...sites.map((s) => s.minutes));
 
   const open = items.filter((i) => i.status === "open");
   const closed = items.filter((i) => i.status !== "open");
@@ -96,53 +94,19 @@ export default async function Dashboard() {
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <div className="tile" style={{ "--glow": "var(--accent)" } as React.CSSProperties}>
-          <p className="t-small text-muted">Plan progress</p>
-          <p className="tile-value mt-1">
-            {done}
-            <span className="text-faint"> / {items.length}</span>
-          </p>
-          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-raised">
-            <div
-              className="h-full rounded-full bg-accent"
-              style={{ width: `${items.length ? (done / items.length) * 100 : 0}%` }}
-            />
-          </div>
-          <p className="t-small mt-1.5 text-faint">
-            {plan ? `${open.length} left, about ${formatMinutes(remaining)}` : "No plan yet"}
-          </p>
-        </div>
-
-        <Link href="/inbox" className="tile block" style={{ "--glow": "var(--c-creator)" } as React.CSSProperties}>
-          <p className="t-small text-muted">Waiting on you</p>
-          <p className="tile-value mt-1">{waiting.length}</p>
-          <p className="t-small mt-[22px] text-faint">
-            {deadlines.length} {deadlines.length === 1 ? "deadline" : "deadlines"} coming up
-          </p>
-        </Link>
-
-        <div className="tile" style={{ "--glow": "var(--c-social)" } as React.CSSProperties}>
-          <p className="t-small text-muted">On your goals yesterday</p>
-          <div className="mt-1 flex items-center justify-between">
-            <p className="tile-value">{yday.alignedPct}%</p>
-            <Ring pct={yday.alignedPct} />
-          </div>
-          <div className="mt-1.5">
-            <SplitBar summary={yday} />
-          </div>
-        </div>
-
-        <Link
-          href="/attention"
-          className="tile block"
-          style={{ "--glow": "var(--c-entertainment)" } as React.CSSProperties}
-        >
-          <p className="t-small text-muted">Browser time yesterday</p>
-          <p className="tile-value mt-1">{formatMinutes(yday.totalMinutes)}</p>
-          <p className="t-small mt-[22px] text-faint">{formatMinutes(weekMinutes)} over 7 days</p>
-        </Link>
-      </div>
+      <StatTiles
+        hasPlan={!!plan}
+        planTotal={items.length}
+        planDone={done}
+        openCount={open.length}
+        remainingMinutes={remaining}
+        waitingCount={waiting.length}
+        deadlineCount={deadlines.length}
+        yesterday={yday}
+        weekMinutes={weekMinutes}
+        inboxHref="/inbox"
+        attentionHref="/attention"
+      />
 
       <div className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,1fr)]">
         <section className="panel min-w-0 self-start">
@@ -219,82 +183,27 @@ export default async function Dashboard() {
         </section>
 
         <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 self-start">
-          <section className="panel">
-            <div className="panel-head">
-              <h2 className="t-section">Attention, last 7 days</h2>
-              <Link href="/attention" className="t-small ml-auto text-accent hover:underline">
-                Details
-              </Link>
-            </div>
-            <div className="p-3.5">
-              {weekMinutes === 0 ? (
-                <p className="text-[13px] text-muted">
-                  No browsing recorded yet. Connect the Chrome extension in{" "}
-                  <Link href="/settings" className="text-accent hover:underline">
-                    Settings
-                  </Link>
-                  .
-                </p>
-              ) : (
-                <WeekChart summaries={summaries} height={116} />
-              )}
-            </div>
-          </section>
-
-          <section className="panel">
-            <div className="panel-head">
-              <h2 className="t-section">Waiting on you</h2>
-              <Link href="/inbox" className="t-small ml-auto text-accent hover:underline">
-                Inbox
-              </Link>
-            </div>
-            {waiting.length === 0 ? (
-              <p className="px-3.5 py-3 text-[13px] text-muted">Nobody is waiting on a reply.</p>
-            ) : (
-              <ul>
-                {waiting.slice(0, 4).map((r) => (
-                  <li key={r.threadId} className="row">
-                    <a
-                      className="flex items-baseline gap-2 px-3.5 py-1.5 text-[13px] hover:bg-raised"
-                      href={`https://mail.google.com/mail/u/0/#all/${r.threadId}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <span className="w-24 shrink-0 truncate font-medium">{r.fromName}</span>
-                      <span className="min-w-0 flex-1 truncate text-muted">{r.subject}</span>
-                      <span className="t-small shrink-0 tabular-nums text-faint">
-                        {r.daysOld === 0 ? "today" : `${r.daysOld}d`}
-                      </span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          {sites.length > 0 && (
-            <section className="panel">
-              <div className="panel-head">
-                <h2 className="t-section">Top sites yesterday</h2>
-              </div>
-              <ul className="space-y-2 p-3.5">
-                {sites.map((s) => (
-                  <li key={s.label} className="text-[13px]">
-                    <div className="flex justify-between gap-3">
-                      <span className="min-w-0 truncate">{s.label}</span>
-                      <span className="shrink-0 tabular-nums text-muted">{formatMinutes(s.minutes)}</span>
-                    </div>
-                    <div className="mt-1 h-1 rounded-full bg-raised">
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${(s.minutes / siteMax) * 100}%`, background: `var(--c-${s.category})` }}
-                      />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
+          <AttentionPanel
+            summaries={summaries}
+            weekMinutes={weekMinutes}
+            href="/attention"
+            basePath="/attention"
+            empty={
+              <>
+                No browsing recorded yet. Connect the Chrome extension in{" "}
+                <a href="/settings" className="text-accent hover:underline">
+                  Settings
+                </a>
+                .
+              </>
+            }
+          />
+          <WaitingPanel
+            waiting={waiting}
+            inboxHref="/inbox"
+            threadHref={(r) => `https://mail.google.com/mail/u/0/#all/${r.threadId}`}
+          />
+          <SitesPanel sites={sites} />
         </div>
       </div>
     </div>

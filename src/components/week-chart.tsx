@@ -14,10 +14,13 @@ export function WeekChart({
   summaries,
   selected,
   height = 128,
+  basePath = "/attention",
 }: {
   summaries: DaySummary[];
   selected?: string;
   height?: number;
+  /** Page each bar links to, as `basePath?day=YYYY-MM-DD`. */
+  basePath?: string;
 }) {
   const peak = Math.max(1, ...summaries.map((s) => s.totalMinutes));
   return (
@@ -27,7 +30,7 @@ export function WeekChart({
           <a
             key={s.day}
             role="listitem"
-            href={`/attention?day=${s.day}`}
+            href={`${basePath}?day=${s.day}`}
             aria-label={`${weekday(s.day)} ${s.day}: ${formatMinutes(s.totalMinutes)}, ${s.alignedPct}% on goals`}
             aria-current={s.day === selected ? "true" : undefined}
             className={`flex h-full min-w-0 flex-1 flex-col justify-end rounded-lg px-1 pb-1 ${

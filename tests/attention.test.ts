@@ -52,6 +52,15 @@ describe("rankings", () => {
     ]);
   });
 
+  it("gives a mixed-use site the category that got the most time", () => {
+    const mixed = [
+      ev({ domain: "youtube.com", category: "work_learning", durationSec: 600 }),
+      ev({ domain: "youtube.com", category: "entertainment", durationSec: 3000 }),
+      ev({ domain: "youtube.com", category: "work_learning", durationSec: 600 }),
+    ];
+    expect(topSites(mixed)[0]).toMatchObject({ label: "youtube.com", minutes: 70, category: "entertainment" });
+  });
+
   it("lists only videos, merged by video id", () => {
     expect(topVideos(events)).toEqual([
       { label: "Goals — Reel", minutes: 10, category: "entertainment", url: "https://www.youtube.com/watch?v=v1" },

@@ -48,18 +48,26 @@ function rank(
   keyOf: (e: AttentionEvent) => { key: string; label: string; url?: string } | null,
   limit: number,
 ): Ranked[] {
-  const map = new Map<string, Ranked & { sec: number }>();
+  type Acc = { label: string; url?: string; sec: number; byCat: Map<AttentionCategory, number> };
+  const map = new Map<string, Acc>();
   for (const e of events) {
     const k = keyOf(e);
     if (!k) continue;
-    const cur = map.get(k.key) ?? { label: k.label, minutes: 0, category: e.category, url: k.url, sec: 0 };
+    const cur = map.get(k.key) ?? { label: k.label, url: k.url, sec: 0, byCat: new Map() };
     cur.sec += e.durationSec;
+    cur.byCat.set(e.category, (cur.byCat.get(e.category) ?? 0) + e.durationSec);
     map.set(k.key, cur);
   }
   return [...map.values()]
     .sort((a, b) => b.sec - a.sec)
     .slice(0, limit)
-    .map(({ sec, ...r }) => ({ ...r, minutes: toMinutes(sec) }));
+    .map((r) => ({
+      label: r.label,
+      url: r.url,
+      minutes: toMinutes(r.sec),
+      // A site that mixes kinds of use (YouTube) takes the category that got the most time.
+      category: [...r.byCat.entries()].sort((a, b) => b[1] - a[1])[0][0],
+    }));
 }
 
 export const topSites = (events: AttentionEvent[], limit = 8) =>

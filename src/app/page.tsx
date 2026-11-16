@@ -63,6 +63,7 @@ export default async function Landing() {
             <a href="#what">What it does</a>
             <a href="#how">How it works</a>
             <a href="#privacy">Privacy</a>
+            <a href="/demo">Demo</a>
           </nav>
           <a href="/login" className="lp-btn lp-btn-sm lp-nav-cta">
             Sign in
@@ -80,11 +81,11 @@ export default async function Landing() {
             </p>
             <div className="lp-cta-row lp-rise d2">
               <GoogleButton />
-              <a href="#how" className="lp-btn">
-                See how it works
+              <a href="/demo" className="lp-btn">
+                Try the demo
               </a>
             </div>
-            <p className="lp-note lp-rise d3">Reads mail and writes drafts. Never sends anything.</p>
+            <p className="lp-note lp-rise d3">The demo uses sample data and needs no sign-in.</p>
 
             <div className="lp-scene lp-rise d4" aria-hidden>
               <div>
@@ -272,6 +273,9 @@ export default async function Landing() {
             <h2 className="lp-h2">Start tomorrow with a plan.</h2>
             <div className="lp-cta-row">
               <GoogleButton />
+              <a href="/demo" className="lp-btn">
+                Try the demo
+              </a>
             </div>
           </section>
 
@@ -280,9 +284,10 @@ export default async function Landing() {
               <i />
               Daybrief
             </span>
-            <a href="/privacy" className="push">
-              Privacy
+            <a href="/demo" className="push">
+              Demo
             </a>
+            <a href="/privacy">Privacy</a>
             <a href="/login">Sign in</a>
           </footer>
         </div>

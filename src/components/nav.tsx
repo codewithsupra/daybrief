@@ -3,19 +3,21 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const NAV = [
+type Item = readonly [href: string, label: string];
+
+const APP_NAV: Item[] = [
   ["/today", "Dashboard"],
   ["/inbox", "Inbox"],
   ["/attention", "Attention"],
   ["/settings", "Settings"],
-] as const;
+];
 
-export function Nav() {
+export function Nav({ items = APP_NAV, exact = [] }: { items?: Item[]; exact?: string[] }) {
   const path = usePathname();
   return (
     <nav className="flex gap-1 sm:flex-col" aria-label="Main">
-      {NAV.map(([href, label]) => {
-        const active = path.startsWith(href);
+      {items.map(([href, label]) => {
+        const active = exact.includes(href) ? path === href : path.startsWith(href);
         return (
           <Link
             key={href}
