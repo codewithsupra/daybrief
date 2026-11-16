@@ -13,6 +13,6 @@ export async function currentUserId(): Promise<string | null> {
 
 export async function requireUserId(): Promise<string> {
   const id = await currentUserId();
-  if (!id) redirect("/login");
+  if (!id) redirect("/");
   return id;
 }

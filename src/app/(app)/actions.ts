@@ -122,7 +122,7 @@ export async function reconnectGmail() {
 }
 
 export async function signOutAction() {
-  await signOut({ redirectTo: "/login" });
+  await signOut({ redirectTo: "/" });
 }
 
 export async function revokeExtensionToken(formData: FormData) {
@@ -143,6 +143,6 @@ export async function deleteAllData(_: ActionState, formData: FormData): Promise
   // Every table references users with ON DELETE CASCADE.
   await db.delete(schema.users).where(eq(schema.users.id, userId));
   if (isDemo()) redirect("/today");
-  await signOut({ redirectTo: "/login" });
+  await signOut({ redirectTo: "/" });
   return null;
 }
