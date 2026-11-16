@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Daybrief",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Records the address, title and active time of the tab you're looking at for your Daybrief plan. Never page contents; never incognito.",
   "permissions": ["tabs", "idle", "alarms", "storage", "scripting"],
   "host_permissions": ["https://www.youtube.com/*"],

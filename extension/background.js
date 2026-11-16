@@ -4,6 +4,7 @@
 const HEARTBEAT = "heartbeat";
 const IDLE_SECONDS = 60;
 const MAX_QUEUE = 2000;
+const CHUNK_MS = 5 * 60_000;
 
 const get = (keys) => chrome.storage.local.get(keys);
 const set = (obj) => chrome.storage.local.set(obj);
@@ -78,6 +79,14 @@ async function observe() {
   const { session } = await get("session");
   if (!active) {
     if (session) await closeSession(now);
+    return;
+  }
+  if (session && session.url === tab.url && now - session.start >= CHUNK_MS) {
+    // Long stay on one page: bank what we have so it uploads now, then keep counting.
+    session.lastBeat = now;
+    await set({ session });
+    await closeSession(now);
+    await set({ session: { ...session, start: now, lastBeat: now } });
     return;
   }
   if (session && session.url === tab.url) {
