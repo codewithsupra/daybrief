@@ -23,29 +23,55 @@ export function renderPlanEmail(input: {
     timeZone: "UTC",
   });
   const numbers = [
-    [`${metrics.needsReply}`, "emails waiting on you"],
-    [`${metrics.alignedPct}%`, "of yesterday on your goals"],
-    [formatMinutes(metrics.totalMinutes), "tracked yesterday"],
+    [`${metrics.needsReply}`, "waiting on you"],
+    [`${metrics.alignedPct}%`, "on goals yesterday"],
+    [formatMinutes(metrics.totalMinutes), "browser time"],
   ];
+  const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
   const rows = items
-    .map((it, i) => {
+    .map((it) => {
       const url = sourceUrl(it);
-      return `<tr><td style="padding:10px 0;border-top:1px solid #e7e2d8;vertical-align:top;width:28px;color:#8a8478">${i + 1}</td>
-<td style="padding:10px 0;border-top:1px solid #e7e2d8"><div style="font-weight:600;color:#1c1a17">${esc(it.title)} <span style="font-weight:400;color:#8a8478">· ${it.minutes}m</span></div>
-<div style="color:#5c574d;font-size:14px;margin-top:2px">${esc(it.why)}${url ? ` <a href="${esc(url)}" style="color:#b4451f">Open</a>` : ""}</div></td></tr>`;
+      const open = url
+        ? ` <a href="${esc(url)}" style="color:#00e599;text-decoration:none;white-space:nowrap">Open &rsaquo;</a>`
+        : "";
+      return `<tr>
+<td style="padding:12px 0 12px 16px;border-top:1px solid #1e2227;vertical-align:top;width:26px">
+<div style="width:14px;height:14px;margin-top:2px;border:1.5px solid #656b74;border-radius:50%"></div></td>
+<td style="padding:12px 8px 12px 0;border-top:1px solid #1e2227;vertical-align:top">
+<div style="font-size:14px;font-weight:600;line-height:1.4;color:#ffffff">${esc(it.title)}</div>
+<div style="margin-top:2px;font-size:13px;line-height:1.45;color:#a1a7b0">${esc(it.why)}${open}</div></td>
+<td style="padding:13px 16px 12px 0;border-top:1px solid #1e2227;vertical-align:top;text-align:right;font-size:12px;color:#656b74;white-space:nowrap">${it.minutes}m</td>
+</tr>`;
     })
     .join("");
-  const html = `<div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:24px;color:#1c1a17;background:#faf7f1">
-<div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#8a8478">Daybrief · ${esc(date)}</div>
-<p style="font-size:18px;line-height:1.45;margin:12px 0 20px">${esc(summary)}</p>
-<table style="width:100%;border-collapse:collapse;font-family:Helvetica,Arial,sans-serif;font-size:15px">${rows}</table>
-<table style="width:100%;margin-top:20px;font-family:Helvetica,Arial,sans-serif"><tr>${numbers
+  const tiles = numbers
     .map(
       ([n, l]) =>
-        `<td style="padding:12px;background:#f1ece2;border-radius:6px"><div style="font-size:20px;font-weight:700">${n}</div><div style="font-size:12px;color:#5c574d">${l}</div></td>`,
+        `<td width="33%" style="padding:12px 14px;border:1px solid #1e2227;border-radius:12px;background:#0b0c0e">
+<div style="font-size:20px;font-weight:600;letter-spacing:-0.02em;color:#ffffff">${n}</div>
+<div style="margin-top:2px;font-size:12px;color:#a1a7b0">${l}</div></td>`,
     )
-    .join('<td style="width:8px"></td>')}</tr></table>
-<p style="margin-top:20px;font-family:Helvetica,Arial,sans-serif;font-size:14px"><a href="${esc(appUrl)}/today" style="color:#b4451f">Open today's plan</a></p></div>`;
+    .join('<td width="8" style="font-size:0">&nbsp;</td>');
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head>
+<body style="margin:0;padding:0;background:#000000">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#000000"><tr><td align="center" style="padding:28px 16px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;font-family:${font}">
+<tr><td style="padding-bottom:20px">
+<table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr>
+<td style="font-size:15px;font-weight:600;color:#ffffff"><span style="display:inline-block;width:10px;height:10px;margin-right:8px;border-radius:3px;background:#00e599"></span>Daybrief</td>
+<td align="right" style="font-size:13px;color:#656b74">${esc(date)}</td>
+</tr></table></td></tr>
+<tr><td style="padding-bottom:16px;font-size:15px;line-height:1.5;color:#c9ced6">${esc(summary)}</td></tr>
+<tr><td style="padding-bottom:12px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>${tiles}</tr></table></td></tr>
+<tr><td style="border:1px solid #1e2227;border-radius:12px;background:#0b0c0e">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr><td colspan="3" style="padding:11px 16px;font-size:13px;font-weight:600;color:#ffffff">Today&rsquo;s plan <span style="font-weight:400;color:#656b74">&nbsp;${items.length} things, about ${formatMinutes(items.reduce((n, it) => n + it.minutes, 0))}</span></td></tr>
+${rows}
+</table></td></tr>
+<tr><td align="center" style="padding:24px 0 8px">
+<a href="${esc(appUrl)}/today" style="display:inline-block;padding:11px 24px;border-radius:999px;background:#00e599;color:#00140d;font-size:14px;font-weight:600;text-decoration:none">Open your dashboard</a></td></tr>
+<tr><td align="center" style="padding-top:12px;font-size:12px;color:#656b74">Sent each morning. Turn it off in <a href="${esc(appUrl)}/settings" style="color:#a1a7b0">Settings</a>.</td></tr>
+</table></td></tr></table></body></html>`;
   const text = [
     `Daybrief · ${date}`,
     "",
